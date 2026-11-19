@@ -24,6 +24,7 @@ These are not copies of other people's skills. Each one covers a problem we saw 
 | [shader-sketches](./shader-sketches) | Writes small GLSL creator visuals with a fixed HTML scaffold and export notes. |
 | [anti-slop-ui-review](./anti-slop-ui-review) | Scores UI defaults and missing behavior, then recommends concrete fixes and two or three skills. |
 | [unslop-ui-rewrite](./unslop-ui-rewrite) | Rewrites a generated UI with a reference, consistent scales, specific copy, working states, and a before/after diff. |
+| [seo-audit-checklist](./seo-audit-checklist) | Audits one public site section and delivers a Markdown report and CSV with evidence, prioritized fixes, and exact replacement copy. |
 
 ## Install
 
@@ -35,6 +36,7 @@ npx skills add steven-van-opus/creators-toolbox-skills --skill revenue-maxxing
 npx skills add steven-van-opus/creators-toolbox-skills --skill md3-ui
 npx skills add steven-van-opus/creators-toolbox-skills --skill click-to-edit-site
 npx skills add steven-van-opus/creators-toolbox-skills --skill unslop-ui-rewrite
+npx skills add steven-van-opus/creators-toolbox-skills --skill seo-audit-checklist
 ```
 
 Or copy a skill folder into your project's `.agents/skills/` or `.claude/skills/` directory.
