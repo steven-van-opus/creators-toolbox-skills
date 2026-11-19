@@ -26,6 +26,8 @@ These are not copies of other people's skills. Each one covers a problem we saw 
 | [unslop-ui-rewrite](./unslop-ui-rewrite) | Rewrites a generated UI with a reference, consistent scales, specific copy, working states, and a before/after diff. |
 | [seo-audit-checklist](./seo-audit-checklist) | Audits one public site section and delivers a Markdown report and CSV with evidence, prioritized fixes, and exact replacement copy. |
 
+| [doomscroll-brief](./doomscroll-brief) | Turns recent social posts into a linked creator brief with a spend cap, evidence ledger and coverage gaps. |
+
 ## Install
 
 From the repo root, after you clone it:
