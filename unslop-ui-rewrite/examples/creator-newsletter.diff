@@ -1,0 +1,67 @@
+--- a/creator-newsletter.jsx
++++ b/creator-newsletter.jsx
+@@ -1,14 +1,54 @@
++import { useId, useState } from "react";
++
+ export function NewsletterCard({ subscribe }) {
++  const emailId = useId();
++  const [email, setEmail] = useState("");
++  const [state, setState] = useState("idle");
++
++  async function handleSubmit(event) {
++    event.preventDefault();
++    if (state === "pending") return;
++    setState("pending");
++    try {
++      const result = await subscribe(email.trim());
++      if (result.status !== "subscribed" && result.status !== "already-subscribed") {
++        throw new Error("Unexpected subscription response");
++      }
++      setState(result.status);
++    } catch {
++      setState("error");
++    }
++  }
++
++  const complete = state === "subscribed" || state === "already-subscribed";
++
+   return (
+-    <div className="w-[520px] rounded-[36px] bg-gradient-to-r from-pink-100 to-violet-100 p-[31px] text-center shadow-2xl">
+-      <h2 className="text-4xl font-black">Your creative journey starts here</h2>
+-      <p className="mt-[11px]">Join the ultimate community of visionary creators.</p>
+-      <input id="newsletter-email" placeholder="Email address" className="mt-[21px] rounded-full p-3" />
+-      <button className="mt-[17px] rounded-full bg-violet-700 p-3 text-white"
+-        onClick={() => subscribe(document.getElementById("newsletter-email").value)}>
+-        Unlock inspiration
+-      </button>
+-      <a href="/tools" className="block rounded-full bg-pink-700 p-3 text-white">Explore now</a>
+-    </div>
++    <section className="w-full max-w-md rounded-lg border border-neutral-300 bg-white p-6 text-left text-neutral-900">
++      <h2 className="text-2xl font-semibold leading-8">Get the weekly creator digest</h2>
++      <p className="mt-2 text-base leading-6">Creator tools, Scout news, and practical guides in one weekly email.</p>
++      <div role="status" className="mt-4 text-base leading-6">
++        {state === "pending" && "Sending your signup..."}
++        {state === "subscribed" && "You're subscribed to the weekly creator digest."}
++        {state === "already-subscribed" && "This email is already subscribed to the weekly creator digest."}
++      </div>
++      {!complete && (
++        <form onSubmit={handleSubmit} className="mt-8 space-y-4">
++          <div>
++            <label htmlFor={emailId} className="block text-sm font-semibold leading-5">Email address</label>
++            <input id={emailId} name="email" type="email" autoComplete="email" required
++              value={email} readOnly={state === "pending"}
++              onChange={(event) => { setEmail(event.target.value); setState("idle"); }}
++              className="mt-2 min-h-12 w-full min-w-0 rounded-lg border border-neutral-500 px-4 py-2 text-base leading-6 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2" />
++          </div>
++          {state === "error" && (
++            <p role="alert" className="text-base leading-6">Signup could not be confirmed. Your email is still here. Try again.</p>
++          )}
++          <button type="submit" disabled={state === "pending"}
++            className="min-h-12 w-full rounded-lg bg-neutral-900 px-4 py-2 text-base font-semibold leading-6 text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-60">
++            {state === "pending" ? "Subscribing..." : state === "error" ? "Retry signup" : "Subscribe to the digest"}
++          </button>
++        </form>
++      )}
++    </section>
+   );
+ }
