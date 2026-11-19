@@ -31,4 +31,4 @@ The original can be installed separately with `npx skills add felipebasurto/unsl
 
 ## License
 
-MIT. See the repository [LICENSE](../../LICENSE). This covers our original work. Unslop UI has its own [MIT license](https://github.com/felipebasurto/unslop-ui/blob/main/LICENSE), copyright 2026 Felipe Basurto. Linked projects retain their own terms.
+MIT. See the repository [LICENSE](../LICENSE). This covers our original work. Unslop UI has its own [MIT license](https://github.com/felipebasurto/unslop-ui/blob/main/LICENSE), copyright 2026 Felipe Basurto. Linked projects retain their own terms.
