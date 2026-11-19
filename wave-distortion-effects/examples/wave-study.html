@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Newsletter wave study</title>
+<style>
+*{box-sizing:border-box} body{margin:0;padding:24px;background:#102529;color:#f5f0df;font:16px/1.5 system-ui,sans-serif}
+.stage{position:relative;isolation:isolate;max-width:1280px;aspect-ratio:10/3;min-height:180px;overflow:hidden;background:#103438}
+.art,canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none} .art{background:repeating-linear-gradient(165deg,#103438 0 32px,#397d77 33px 45px,#285653 46px 68px);filter:url(#quiet-wave);}
+canvas{z-index:1} h1{position:relative;z-index:2;max-width:18ch;padding:clamp(16px,4vw,48px);margin:0;font-size:clamp(20px,4vw,54px);line-height:1.1}
+button{margin-top:16px;padding:10px 18px;min-height:44px;font:inherit} button:focus-visible{outline:3px solid #f8cd78;outline-offset:3px}
+[hidden]{display:none!important} @media(prefers-reduced-motion:reduce){.art{filter:none}}
+</style>
+<svg width="0" height="0" aria-hidden="true"><defs><filter id="quiet-wave" x="-5%" y="-10%" width="110%" height="120%"><feTurbulence type="fractalNoise" baseFrequency="0.012 0.04" numOctaves="1" seed="7" result="noise"/><feDisplacementMap in="SourceGraphic" in2="noise" scale="5" xChannelSelector="R" yChannelSelector="G"/></filter></defs></svg>
+<main><div class="stage"><div class="art" aria-hidden="true"></div><canvas aria-hidden="true"></canvas><h1>Creator tools worth trying this week</h1></div>
+<button id="pause" type="button" aria-pressed="false">Pause</button><p id="status" role="status">Static artwork fallback.</p>
+<p>Modes: ?mode=sine, ?mode=ripple, ?mode=flag. Add &amp;fallback to test the static fallback.</p></main>
+<script id="fragment" type="x-shader/x-fragment">
+precision mediump float;
+uniform float u_time;
+uniform vec2 u_resolution;
+uniform vec2 u_mouse;
+uniform sampler2D u_image;
+uniform vec2 u_texel;
+uniform float u_mode;
+uniform float u_amplitude;
+uniform float u_frequency;
+uniform float u_speed;
+uniform float u_falloff;
+uniform vec2 u_direction;
+const float TAU = 6.2831853;
+void main() {
+  vec2 uv = gl_FragCoord.xy / u_resolution;
+  vec2 sampleUV = uv;
+  float phase = TAU * (dot(uv, u_direction) * u_frequency - u_time * u_speed);
+  if (u_mode < 0.5) {
+    sampleUV.y += u_amplitude * sin(phase);
+  } else if (u_mode < 1.5) {
+    vec2 delta = uv - u_mouse;
+    float aspect = u_resolution.x / u_resolution.y;
+    delta.x *= aspect;
+    float radius = length(delta);
+    vec2 outward = delta / max(radius, 0.0001);
+    outward.x /= aspect;
+    float ripple = sin(TAU * (radius*u_frequency - u_time*u_speed));
+    sampleUV += outward * ripple * u_amplitude * exp(-u_falloff*radius);
+  } else {
+    sampleUV.y += u_amplitude * uv.x * uv.x * sin(phase);
+  }
+  sampleUV = clamp(sampleUV, u_texel * 0.5, vec2(1.0) - u_texel * 0.5);
+  gl_FragColor = texture2D(u_image, sampleUV);
+}
+</script>
+<script>
+
+const canvas = document.querySelector('canvas');
+const stage = document.querySelector('.stage');
+const status = document.querySelector('#status');
+const button = document.querySelector('#pause');
+const reduced = matchMedia('(prefers-reduced-motion: reduce)');
+const gl = new URLSearchParams(location.search).has('fallback') ? null : canvas.getContext('webgl', {alpha:false});
+let program, frame = 0, elapsed = 0, previous = 0, visible = true, paused = false;
+let pointer = [0.5, 0.5];
+function compile(kind, source) {
+  const shader = gl.createShader(kind);
+  gl.shaderSource(shader, source); gl.compileShader(shader);
+  if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+    const log = gl.getShaderInfoLog(shader); gl.deleteShader(shader); throw Error(log);
+  }
+  return shader;
+}
+function size() {
+  const box = stage.getBoundingClientRect(), dpr = Math.min(devicePixelRatio || 1, 1.5);
+  const width = Math.max(1, Math.round(box.width * dpr));
+  const height = Math.max(1, Math.round(box.height * dpr));
+  if (canvas.width !== width) canvas.width = width;
+  if (canvas.height !== height) canvas.height = height;
+  gl.viewport(0, 0, canvas.width, canvas.height);
+}
+function uniform(name, ...values) {
+  const loc = gl.getUniformLocation(program, name);
+  if (loc !== null) gl['uniform' + values.length + 'f'](loc, ...values);
+}
+function draw() {
+  size();
+  uniform('u_time', reduced.matches ? 0 : elapsed);
+  uniform('u_resolution', canvas.width, canvas.height);
+  uniform('u_mouse', ...pointer);
+  const modes = {sine:0, ripple:1, flag:2};
+  uniform('u_mode', modes[new URLSearchParams(location.search).get('mode')] ?? 1);
+  uniform('u_texel', 1/512, 1/256);
+  uniform('u_amplitude', 0.012); uniform('u_frequency', 5);
+  uniform('u_speed', 0.3); uniform('u_falloff', 5); uniform('u_direction', 1, 0);
+  gl.drawArrays(gl.TRIANGLES, 0, 3);
+  if (gl.isContextLost()) throw Error('WebGL context lost');
+}
+function running() { return gl && program && visible && !document.hidden && !paused && !reduced.matches; }
+function tick(now) {
+  frame = 0;
+  if (!running()) return;
+  if (previous) elapsed += Math.min((now - previous) / 1000, 0.1);
+  previous = now;
+  try { draw(); frame = requestAnimationFrame(tick); } catch (error) { fail(error); }
+}
+function sync() {
+  cancelAnimationFrame(frame); frame = 0; previous = 0;
+  button.textContent = paused ? 'Resume' : 'Pause';
+  button.setAttribute('aria-pressed', String(paused));
+  canvas.hidden = reduced.matches || !program;
+  if (gl && program) {
+    try { draw(); } catch (error) { fail(error); return; }
+    if (running()) frame = requestAnimationFrame(tick);
+  }
+}
+function fail(error) {
+  cancelAnimationFrame(frame); program = null; canvas.hidden = true;
+  button.disabled = true; console.error(error);
+  status.textContent = 'Static artwork fallback. ' + error.message;
+}
+try {
+  if (!gl) throw Error('WebGL unavailable');
+  const vertex = compile(gl.VERTEX_SHADER, 'attribute vec2 a_position; void main(){gl_Position=vec4(a_position,0.0,1.0);}');
+  const fragment = compile(gl.FRAGMENT_SHADER, document.querySelector('#fragment').textContent);
+  program = gl.createProgram(); gl.attachShader(program, vertex); gl.attachShader(program, fragment); gl.linkProgram(program);
+  if (!gl.getProgramParameter(program, gl.LINK_STATUS)) throw Error(gl.getProgramInfoLog(program));
+  gl.deleteShader(vertex); gl.deleteShader(fragment); gl.useProgram(program);
+  const buffer = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1,3,-1,-1,3]), gl.STATIC_DRAW);
+  const attr = gl.getAttribLocation(program, 'a_position');
+  gl.enableVertexAttribArray(attr); gl.vertexAttribPointer(attr, 2, gl.FLOAT, false, 0, 0);
+  const art = document.createElement('canvas'); art.width = 512; art.height = 256;
+  const ctx = art.getContext('2d');
+  ctx.fillStyle = '#103438'; ctx.fillRect(0,0,512,256);
+  for (let i=0; i<7; i++) {
+    ctx.fillStyle = i%2 ? '#397d77' : '#285653';
+    ctx.beginPath(); ctx.ellipse(410, 110+i*22, 240, 15, -0.25, 0, Math.PI*2); ctx.fill();
+  }
+  const texture = gl.createTexture(); gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, texture);
+  gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, art);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  gl.uniform1i(gl.getUniformLocation(program, 'u_image'), 0);
+  status.textContent = 'WebGL ready. Decorative artwork; text remains HTML.';
+  sync();
+} catch (error) { fail(error); }
+button.addEventListener('click', () => { paused = !paused; sync(); });
+stage.addEventListener('pointermove', event => {
+  const box = stage.getBoundingClientRect();
+  pointer = [Math.max(0, Math.min(1, (event.clientX-box.left)/box.width)),
+    Math.max(0, Math.min(1, 1-(event.clientY-box.top)/box.height))];
+  if (!running() && program) sync();
+});
+new ResizeObserver(() => sync()).observe(stage);
+new IntersectionObserver(entries => { visible = entries[0].isIntersecting; sync(); }).observe(stage);
+document.addEventListener('visibilitychange', sync);
+reduced.addEventListener('change', sync);
+canvas.addEventListener('webglcontextlost', event => { event.preventDefault(); fail(Error('Context lost; reload to retry.')); });
+
+</script></html>

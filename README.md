@@ -19,6 +19,10 @@ These are not copies of other people's skills. Each one covers a problem we saw 
 | [claude-video-edit](./claude-video-edit) | Plans a beginner-friendly edit: one clip, one style reference, a beat list, then plain-language notes. |
 | [grok-bot-video-studio](./grok-bot-video-studio) | Designs a small, realistic Grok Bot week for a video creator. |
 | [weekly-creator-news-show](./weekly-creator-news-show) | Plans a short weekly news show from Scout posts and official sources. |
+| [click-to-edit-site](./click-to-edit-site) | Turns an element selection into a scoped local site edit with screenshot verification. |
+| [wave-distortion-effects](./wave-distortion-effects) | Builds sine, ripple, and flag wave effects with a static fallback and motion controls. |
+| [shader-sketches](./shader-sketches) | Writes small GLSL creator visuals with a fixed HTML scaffold and export notes. |
+| [anti-slop-ui-review](./anti-slop-ui-review) | Scores UI defaults and missing behavior, then recommends concrete fixes and two or three skills. |
 
 ## Install
 
@@ -28,6 +32,7 @@ From the repo root, after you clone it:
 npx skills add steven-van-opus/creators-toolbox-skills --skill make-logo
 npx skills add steven-van-opus/creators-toolbox-skills --skill revenue-maxxing
 npx skills add steven-van-opus/creators-toolbox-skills --skill md3-ui
+npx skills add steven-van-opus/creators-toolbox-skills --skill click-to-edit-site
 ```
 
 Or copy a skill folder into your project's `.agents/skills/` or `.claude/skills/` directory.
