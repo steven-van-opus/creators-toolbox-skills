@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Paper Plane Toronto</title>
+<style>
+  html, body {
+    margin: 0;
+    height: 100%;
+    overflow: hidden;
+    background: #14203a;
+    touch-action: none;
+    overscroll-behavior: none;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+  }
+  canvas { display: block; width: 100vw; height: 100vh; height: 100dvh; touch-action: none; }
+  #mute {
+    position: fixed; top: 10px; right: 10px; width: 44px; height: 44px;
+    border: 0; border-radius: 22px; background: rgba(255,255,255,0.18);
+    color: #fff; font: 20px system-ui, sans-serif; cursor: pointer;
+  }
+</style>
+</head>
+<body>
+<canvas id="game" aria-label="Paper Plane Toronto game"></canvas>
+<button id="mute" aria-label="Toggle sound">&#128263;</button>
+<script>
+(() => {
+  'use strict';
+
+  const W = 400, H = 700;
+  const GROUND = H - 48;
+  const PLANE_X = 110;
+  const START_Y = 395; // between the instructions and the start prompt
+  const COL_W = 70;
+  const BEST_KEY = 'paper-plane-toronto.best';
+
+  const canvas = document.getElementById('game');
+  const ctx = canvas.getContext('2d');
+  const muteBtn = document.getElementById('mute');
+  const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  let view = { scale: 1, ox: 0, oy: 0, cw: 0, ch: 0 };
+  function resize() {
+    const dpr = Math.min(window.devicePixelRatio || 1, 3);
+    const cw = window.innerWidth, ch = window.innerHeight;
+    canvas.width = Math.round(cw * dpr);
+    canvas.height = Math.round(ch * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const scale = Math.min(cw / W, ch / H);
+    view = { scale, ox: (cw - W * scale) / 2, oy: (ch - H * scale) / 2, cw, ch };
+  }
+  window.addEventListener('resize', resize);
+  window.addEventListener('orientationchange', resize);
+  resize();
+
+  function loadBest() {
+    try { return parseInt(localStorage.getItem(BEST_KEY), 10) || 0; } catch (e) { return 0; }
+  }
+  function saveBest(v) {
+    try { localStorage.setItem(BEST_KEY, String(v)); } catch (e) { /* storage blocked */ }
+  }
+
+  // ---------- sound, muted by default ----------
+  let audio = null, muted = true;
+  function beep(freq, dur, type, vol, slide) {
+    if (muted) return;
+    try {
+      if (!audio) audio = new (window.AudioContext || window.webkitAudioContext)();
+      if (audio.state === 'suspended') audio.resume();
+      const t = audio.currentTime;
+      const osc = audio.createOscillator(), gain = audio.createGain();
+      osc.type = type || 'sine';
+      osc.frequency.setValueAtTime(freq, t);
+      osc.frequency.exponentialRampToValueAtTime(Math.max(40, freq * (slide || 1.4)), t + dur);
+      gain.gain.setValueAtTime(vol || 0.06, t);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      osc.connect(gain).connect(audio.destination);
+      osc.start(t); osc.stop(t + dur + 0.02);
+    } catch (e) { /* no audio, carry on */ }
+  }
+  function toggleMute() {
+    muted = !muted;
+    muteBtn.innerHTML = muted ? '&#128263;' : '&#128264;';
+    if (!muted) beep(600, 0.08, 'triangle', 0.05);
+  }
+  muteBtn.addEventListener('pointerdown', (e) => e.stopPropagation());
+  muteBtn.addEventListener('click', (e) => { e.stopPropagation(); toggleMute(); muteBtn.blur(); });
+
+  // ---------- skyline backdrop (generated once, deterministic) ----------
+  const skyline = [];
+  (function buildSkyline() {
+    let seed = 7;
+    const rnd = () => { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; };
+    let x = 0;
+    while (x < W * 2) {
+      const w = 22 + rnd() * 34;
+      skyline.push({ x, w, h: 60 + rnd() * 120 });
+      x += w + 2;
+    }
+  })();
+
+  // ---------- state ----------
+  let state = 'start';
+  let best = loadBest(), newBest = false, overAt = 0;
+  let plane, cols, particles, score, speed, spawnX, shake, flash, bgScroll, nextTower;
+
+  function reset() {
+    plane = { y: START_Y, vy: 0, rot: 0, squash: 0 };
+    cols = [];
+    particles = [];
+    score = 0;
+    speed = 150;
+    spawnX = W + 40;
+    shake = 0;
+    flash = 0;
+    newBest = false;
+    nextTower = 3;
+  }
+  reset();
+
+  function addColumn(x) {
+    const gapH = Math.max(150, 200 - score * 2.5);
+    const margin = 90;
+    const gapY = margin + gapH / 2 + Math.random() * (GROUND - margin * 2 - gapH);
+    nextTower -= 1;
+    const tower = nextTower <= 0;
+    if (tower) nextTower = 5 + ((Math.random() * 3) | 0);
+    cols.push({ x, gapY, gapH, tower, passed: false, seed: Math.random() * 1000 });
+  }
+
+  // Collision rectangles for a column, in world coordinates.
+  function rectsFor(c) {
+    const top = c.gapY - c.gapH / 2;
+    const bottom = c.gapY + c.gapH / 2;
+    const r = [{ x: c.x, y: 0, w: COL_W, h: top }];
+    if (c.tower) {
+      r.push({ x: c.x + 2, y: bottom, w: COL_W - 4, h: 26 });        // observation pod
+      r.push({ x: c.x + 24, y: bottom + 26, w: 22, h: GROUND - bottom }); // shaft
+    } else {
+      r.push({ x: c.x, y: bottom, w: COL_W, h: GROUND - bottom });
+    }
+    return r;
+  }
+
+  function circleHitsRect(cx, cy, cr, r) {
+    const nx = Math.max(r.x, Math.min(cx, r.x + r.w));
+    const ny = Math.max(r.y, Math.min(cy, r.y + r.h));
+    const dx = cx - nx, dy = cy - ny;
+    return dx * dx + dy * dy < cr * cr;
+  }
+
+  function burst(x, y, n, colors, power) {
+    for (let i = 0; i < n && particles.length < 160; i++) {
+      const a = Math.random() * Math.PI * 2;
+      const s = (power || 200) * (0.3 + Math.random());
+      particles.push({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, life: 0.4 + Math.random() * 0.5, r: 1.5 + Math.random() * 3, c: colors[(Math.random() * colors.length) | 0] });
+    }
+  }
+
+  function flap() {
+    plane.vy = -330;
+    plane.squash = 1;
+    burst(PLANE_X - 16, plane.y + 4, 5, ['#ffffff', '#cfe3ff'], 80);
+    beep(420, 0.09, 'triangle', 0.05, 1.6);
+  }
+
+  function startGame() {
+    reset();
+    state = 'playing';
+    flap();
+  }
+
+  function crash() {
+    state = 'over';
+    overAt = performance.now();
+    shake = reduceMotion ? 0 : 16;
+    flash = 1;
+    burst(PLANE_X, plane.y, 34, ['#ffffff', '#ffd166', '#ff6b6b', '#cfe3ff'], 320);
+    if (score > best) { best = score; newBest = true; saveBest(best); }
+    beep(220, 0.4, 'sawtooth', 0.08, 0.4);
+  }
+
+  function action() {
+    if (state === 'start') startGame();
+    else if (state === 'playing') flap();
+    else if (state === 'over' && performance.now() - overAt > 400) startGame();
+  }
+
+  // ---------- input ----------
+  window.addEventListener('keydown', (e) => {
+    const k = e.key;
+    if (k === ' ' || k === 'ArrowUp' || k === 'ArrowDown') e.preventDefault();
+    if (e.repeat) return;
+    if (k === ' ' || k === 'ArrowUp' || k === 'w' || k === 'W' || k === 'Enter') action();
+    if (k === 'm' || k === 'M') toggleMute();
+  });
+  canvas.addEventListener('pointerdown', (e) => { e.preventDefault(); action(); });
+  document.addEventListener('contextmenu', (e) => e.preventDefault());
+
+  // ---------- update ----------
+  function update(dt) {
+    shake = Math.max(0, shake - dt * 45);
+    flash = Math.max(0, flash - dt * 3);
+    plane.squash = Math.max(0, plane.squash - dt * 6);
+
+    for (let i = particles.length - 1; i >= 0; i--) {
+      const p = particles[i];
+      p.vy += 300 * dt; p.x += p.vx * dt; p.y += p.vy * dt; p.life -= dt;
+      if (state === 'playing') p.x -= speed * dt * 0.5;
+      if (p.life <= 0) particles.splice(i, 1);
+    }
+
+    if (state === 'start') {
+      plane.y = START_Y + Math.sin(performance.now() / 400) * 12;
+      plane.rot = Math.sin(performance.now() / 400) * 0.1;
+      bgScroll = (bgScroll || 0) + dt * 30;
+      return;
+    }
+    if (state === 'over') {
+      // Let the plane tumble to the street.
+      if (plane.y < GROUND - 8) { plane.vy += 1200 * dt; plane.y = Math.min(GROUND - 8, plane.y + plane.vy * dt); plane.rot += dt * 6; }
+      return;
+    }
+
+    speed = 150 + Math.min(score, 40) * 3;
+    bgScroll += speed * dt * 0.25;
+
+    plane.vy += 1100 * dt;
+    plane.vy = Math.min(plane.vy, 520);
+    plane.y += plane.vy * dt;
+    plane.rot += (Math.max(-0.5, Math.min(1.1, plane.vy / 450)) - plane.rot) * Math.min(1, dt * 10);
+    if (plane.y < 12) { plane.y = 12; plane.vy = 0; }
+
+    // spawn columns at a fixed spacing
+    spawnX -= speed * dt;
+    if (spawnX <= W + 40) { addColumn(W + 40); spawnX += 220; }
+
+    const hitR = 9;
+    for (let i = cols.length - 1; i >= 0; i--) {
+      const c = cols[i];
+      c.x -= speed * dt;
+      if (!c.passed && c.x + COL_W < PLANE_X - hitR) {
+        c.passed = true;
+        score += 1;
+        burst(PLANE_X, plane.y, 10, ['#ffd166', '#ffffff'], 160);
+        beep(780 + Math.min(score, 30) * 12, 0.07, 'square', 0.035, 1.2);
+      }
+      if (c.x + COL_W < -10) { cols.splice(i, 1); continue; }
+      for (const r of rectsFor(c)) {
+        if (circleHitsRect(PLANE_X, plane.y, hitR, r)) { crash(); return; }
+      }
+    }
+    if (plane.y > GROUND - 8) { plane.y = GROUND - 8; crash(); }
+  }
+
+  // ---------- draw ----------
+  function drawCNTower(x, base, scale, color) {
+    // A simple silhouette: tapered shaft, pod, upper pod, antenna.
+    const s = scale;
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.moveTo(x - 9 * s, base);
+    ctx.lineTo(x - 3 * s, base - 150 * s);
+    ctx.lineTo(x + 3 * s, base - 150 * s);
+    ctx.lineTo(x + 9 * s, base);
+    ctx.closePath();
+    ctx.fill();
+    ctx.beginPath();
+    ctx.ellipse(x, base - 152 * s, 14 * s, 7 * s, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillRect(x - 2.5 * s, base - 200 * s, 5 * s, 50 * s);
+    ctx.fillRect(x - 5 * s, base - 192 * s, 10 * s, 5 * s);
+    ctx.fillRect(x - 1 * s, base - 245 * s, 2 * s, 50 * s);
+  }
+
+  function drawBackground() {
+    const g = ctx.createLinearGradient(0, 0, 0, H);
+    g.addColorStop(0, '#2a3f74');
+    g.addColorStop(0.55, '#e07a6a');
+    g.addColorStop(1, '#ffc58a');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, W, H);
+
+    // far skyline with the CN Tower, slow parallax
+    const off = (bgScroll * 0.4) % (W * 2);
+    ctx.fillStyle = 'rgba(40,30,70,0.35)';
+    for (const b of skyline) {
+      let bx = b.x - off;
+      if (bx + b.w < 0) bx += W * 2;
+      if (bx > W) continue;
+      ctx.fillRect(bx, GROUND - b.h, b.w, b.h);
+    }
+    let tx = 300 - off * 0.5;
+    while (tx < -40) tx += W * 1.5;
+    drawCNTower(tx, GROUND, 1.6, 'rgba(40,30,70,0.45)');
+  }
+
+  function drawBuilding(x, top, seed) {
+    const h = GROUND - top;
+    ctx.fillStyle = '#3b3561';
+    ctx.fillRect(x, top, COL_W, h);
+    ctx.fillStyle = '#2c2750';
+    ctx.fillRect(x + COL_W - 10, top, 10, h);
+    // roof ledge and a water tank on some roofs
+    ctx.fillStyle = '#524a82';
+    ctx.fillRect(x - 4, top, COL_W + 8, 8);
+    if (seed % 2 < 1) {
+      ctx.fillStyle = '#6b5a8f';
+      ctx.fillRect(x + 12, top - 14, 18, 14);
+      ctx.fillRect(x + 14, top - 18, 14, 4);
+    }
+    // lit windows
+    for (let wy = top + 18; wy < GROUND - 14; wy += 22) {
+      for (let wx = x + 8; wx < x + COL_W - 16; wx += 16) {
+        const lit = ((wx * 7 + wy * 13 + seed) | 0) % 5 !== 0;
+        ctx.fillStyle = lit ? '#ffd98a' : '#463f70';
+        ctx.fillRect(wx, wy, 8, 11);
+      }
+    }
+  }
+
+  function drawTowerColumn(x, top) {
+    ctx.fillStyle = '#5a4f8a';
+    ctx.fillRect(x + 24, top + 26, 22, GROUND - top - 26);
+    ctx.fillStyle = '#4a4078';
+    ctx.fillRect(x + 38, top + 26, 8, GROUND - top - 26);
+    ctx.fillStyle = '#6d62a3';
+    ctx.beginPath();
+    ctx.moveTo(x + 2, top + 8);
+    ctx.lineTo(x + COL_W - 2, top + 8);
+    ctx.lineTo(x + COL_W - 10, top + 26);
+    ctx.lineTo(x + 10, top + 26);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillRect(x + 8, top, COL_W - 16, 9);
+    ctx.fillStyle = '#ffe39a';
+    for (let i = 0; i < 5; i++) ctx.fillRect(x + 12 + i * 10, top + 12, 6, 5);
+    ctx.fillStyle = '#ff5d5d';
+    ctx.beginPath(); ctx.arc(x + COL_W / 2, top - 3, 3, 0, Math.PI * 2); ctx.fill();
+  }
+
+  function drawCloudBank(x, bottom) {
+    ctx.fillStyle = '#e9e6f5';
+    ctx.fillRect(x, 0, COL_W, bottom - 14);
+    ctx.fillStyle = '#d4cfe8';
+    ctx.fillRect(x + COL_W - 12, 0, 12, bottom - 14);
+    ctx.fillStyle = '#e9e6f5';
+    for (let i = 0; i < 4; i++) {
+      ctx.beginPath();
+      ctx.arc(x + 8 + i * 18, bottom - 14, 14, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  function drawPlane() {
+    ctx.save();
+    ctx.translate(PLANE_X, plane.y);
+    ctx.rotate(plane.rot);
+    const sq = plane.squash;
+    ctx.scale(1 + sq * 0.2, 1 - sq * 0.25);
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.moveTo(20, 0);
+    ctx.lineTo(-18, -12);
+    ctx.lineTo(-10, 0);
+    ctx.lineTo(-18, 10);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = '#c9d6ef';
+    ctx.beginPath();
+    ctx.moveTo(20, 0);
+    ctx.lineTo(-10, 0);
+    ctx.lineTo(-14, 7);
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = '#8796b8';
+    ctx.lineWidth = 1.2;
+    ctx.beginPath(); ctx.moveTo(20, 0); ctx.lineTo(-10, 0); ctx.stroke();
+    ctx.restore();
+  }
+
+  function text(str, x, y, size, color) {
+    ctx.font = '800 ' + size + 'px system-ui, -apple-system, Segoe UI, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.lineWidth = Math.max(3, size / 6);
+    ctx.lineJoin = 'round';
+    ctx.strokeStyle = 'rgba(20,24,52,0.85)';
+    ctx.strokeText(str, x, y);
+    ctx.fillStyle = color || '#fff';
+    ctx.fillText(str, x, y);
+  }
+
+  function draw(now) {
+    ctx.fillStyle = '#14203a';
+    ctx.fillRect(0, 0, view.cw, view.ch);
+    ctx.save();
+    const sx = shake ? (Math.random() - 0.5) * shake : 0;
+    const sy = shake ? (Math.random() - 0.5) * shake : 0;
+    ctx.translate(view.ox + sx, view.oy + sy);
+    ctx.scale(view.scale, view.scale);
+    ctx.beginPath(); ctx.rect(0, 0, W, H); ctx.clip();
+
+    drawBackground();
+
+    for (const c of cols) {
+      const top = c.gapY - c.gapH / 2, bottom = c.gapY + c.gapH / 2;
+      drawCloudBank(c.x, top);
+      if (c.tower) drawTowerColumn(c.x, bottom);
+      else drawBuilding(c.x, bottom, c.seed);
+    }
+
+    // street and lakeshore
+    ctx.fillStyle = '#25213f';
+    ctx.fillRect(0, GROUND, W, H - GROUND);
+    ctx.fillStyle = '#ffd98a';
+    const dash = (bgScroll * 4) % 40;
+    for (let x = -dash; x < W; x += 40) ctx.fillRect(x, GROUND + 22, 20, 3);
+
+    drawPlane();
+
+    for (const p of particles) {
+      ctx.globalAlpha = Math.max(0, Math.min(1, p.life / 0.4));
+      ctx.fillStyle = p.c;
+      ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+
+    if (state === 'playing') {
+      text(String(score), W / 2, 70, 54, '#fff');
+    } else if (state === 'start') {
+      text('PAPER PLANE', W / 2, 170, 42, '#fff');
+      text('TORONTO', W / 2, 218, 42, '#ffd166');
+      text('Space, W or Up to lift', W / 2, 300, 18, '#fff');
+      text('On a phone, tap anywhere', W / 2, 328, 18, '#fff');
+      text('Fly through the gaps', W / 2, 356, 18, '#fff');
+      const pulse = 1 + Math.sin(now / 250) * 0.05;
+      ctx.save(); ctx.translate(W / 2, 450); ctx.scale(pulse, pulse);
+      text('Tap or press Space to start', 0, 0, 22, '#fff');
+      ctx.restore();
+      text('Best: ' + best, W / 2, 505, 20, '#ffe6b0');
+    } else {
+      ctx.fillStyle = 'rgba(20,24,52,0.5)';
+      ctx.fillRect(0, 0, W, H);
+      text('CRUMPLED!', W / 2, 200, 50, '#ff8a7a');
+      text('Score: ' + score, W / 2, 280, 30, '#fff');
+      text((newBest ? 'New best! ' : 'Best: ') + best, W / 2, 325, 22, newBest ? '#ffd166' : '#ffe6b0');
+      if (performance.now() - overAt > 400) text('Tap or press Space to fly again', W / 2, 420, 20, '#fff');
+    }
+
+    if (flash > 0) {
+      ctx.fillStyle = 'rgba(255,255,255,' + (flash * 0.7).toFixed(3) + ')';
+      ctx.fillRect(0, 0, W, H);
+    }
+    ctx.restore();
+  }
+
+  bgScroll = 0;
+  let last = performance.now();
+  function frame(now) {
+    const dt = Math.min(1 / 30, (now - last) / 1000);
+    last = now;
+    if (!document.hidden) update(dt);
+    draw(now);
+    requestAnimationFrame(frame);
+  }
+  document.addEventListener('visibilitychange', () => { last = performance.now(); });
+  requestAnimationFrame(frame);
+
+  window.__game = {
+    get state() { return state; },
+    get score() { return score; },
+    get best() { return best; },
+    get planeY() { return plane.y; },
+    get columns() { return cols.length; },
+    get nextGapY() { const c = cols.find((k) => !k.passed); return c ? c.gapY : START_Y; }
+  };
+})();
+</script>
+</body>
+</html>

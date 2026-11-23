@@ -25,8 +25,8 @@ These are not copies of other people's skills. Each one covers a problem we saw 
 | [anti-slop-ui-review](./anti-slop-ui-review) | Scores UI defaults and missing behavior, then recommends concrete fixes and two or three skills. |
 | [unslop-ui-rewrite](./unslop-ui-rewrite) | Rewrites a generated UI with a reference, consistent scales, specific copy, working states, and a before/after diff. |
 | [seo-audit-checklist](./seo-audit-checklist) | Audits one public site section and delivers a Markdown report and CSV with evidence, prioritized fixes, and exact replacement copy. |
-
 | [doomscroll-brief](./doomscroll-brief) | Turns recent social posts into a linked creator brief with a spend cap, evidence ledger and coverage gaps. |
+| [browser-game-maker](./browser-game-maker) | Turns one sentence into a small, playable single-file HTML5 canvas game, then plays it in a browser to check it works. |
 
 ## Install
 
@@ -39,6 +39,7 @@ npx skills add steven-van-opus/creators-toolbox-skills --skill md3-ui
 npx skills add steven-van-opus/creators-toolbox-skills --skill click-to-edit-site
 npx skills add steven-van-opus/creators-toolbox-skills --skill unslop-ui-rewrite
 npx skills add steven-van-opus/creators-toolbox-skills --skill seo-audit-checklist
+npx skills add steven-van-opus/creators-toolbox-skills --skill browser-game-maker
 ```
 
 Or copy a skill folder into your project's `.agents/skills/` or `.claude/skills/` directory.
