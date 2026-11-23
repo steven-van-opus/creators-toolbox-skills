@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Field Notes bookmark motion concept</title>
+<style>
+* { box-sizing: border-box; }
+body { margin: 0; min-height: 100svh; display: grid; place-items: center; padding: 24px; background: #f3f1eb; color: #18342c; font: 18px/1.5 system-ui, sans-serif; }
+main { max-width: 620px; width: 100%; }
+.eyebrow { margin: 0 0 12px; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .12em; }
+article { border: 1px solid #c3cbbf; border-radius: 24px; padding: clamp(24px, 5vw, 48px); background: #fffef8; }
+h1 { font-size: clamp(30px, 6vw, 46px); line-height: 1.08; letter-spacing: -.04em; margin: 10px 0 20px; }
+.description { color: #4e6258; }
+button { min-height: 48px; display: inline-flex; align-items: center; gap: 10px; border: 1px solid #18342c; border-radius: 12px; padding: 12px 20px; font: 700 16px/1.3 system-ui, sans-serif; color: #18342c; background: #fffef8; cursor: pointer; transition: color 180ms ease-out, background-color 180ms ease-out; }
+button:focus-visible { outline: 3px solid #9f5c1d; outline-offset: 4px; }
+button[aria-pressed="true"] { color: #fffef8; background: #18342c; }
+.icon { width: 18px; height: 22px; flex-shrink: 0; fill: none; stroke: currentColor; stroke-width: 1.7; transform: translateY(0) scale(1); transition: transform 180ms ease-out; }
+button[aria-pressed="true"] .icon { transform: translateY(-2px) scale(1.06); fill: currentColor; }
+#label { min-width: 78px; text-align: left; }
+#status { min-height: 3em; margin-bottom: 0; font-size: 15px; color: #4e6258; }
+footer { margin-top: 18px; font-size: 13px; color: #4e6258; }
+@media (prefers-reduced-motion: reduce) {
+  button, .icon { transition: none; }
+  button[aria-pressed="true"] .icon { transform: none; }
+}
+</style>
+</head>
+<body>
+<main>
+<p class="eyebrow">Creators Toolbox / original interaction concept</p>
+<article>
+<p class="eyebrow">Field Notes / issue 014</p>
+<h1>One small ritual for a better creative week</h1>
+<p class="description">A fictional newsletter archive card. Save this issue to try a state change that can follow your next click immediately.</p>
+<button id="save" type="button" aria-pressed="false">
+<svg class="icon" viewBox="0 0 18 22" aria-hidden="true"><path d="M3 2h12v18l-6-4-6 4Z"/></svg>
+<span id="label">Save issue</span>
+</button>
+<p id="status" role="status" aria-live="polite" aria-atomic="true">This issue is not saved.</p>
+</article>
+<footer>Illustrative UI only. State resets when this page reloads.</footer>
+</main>
+<script>
+const save = document.querySelector('#save');
+const label = document.querySelector('#label');
+const status = document.querySelector('#status');
+save.addEventListener('click', () => {
+  const saved = save.getAttribute('aria-pressed') !== 'true';
+  save.setAttribute('aria-pressed', String(saved));
+  label.textContent = saved ? 'Saved' : 'Save issue';
+  status.textContent = saved ? 'Issue saved to your reading list.' : 'Issue removed from your reading list.';
+});
+</script>
+</body>
+</html>

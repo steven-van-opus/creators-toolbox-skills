@@ -28,6 +28,7 @@ These are not copies of other people's skills. Each one covers a problem we saw 
 | [doomscroll-brief](./doomscroll-brief) | Turns recent social posts into a linked creator brief with a spend cap, evidence ledger and coverage gaps. |
 | [browser-game-maker](./browser-game-maker) | Turns one sentence into a small, playable single-file HTML5 canvas game, then plays it in a browser to check it works. |
 | [snapcn-motion](./snapcn-motion) | Plans one product action as a Remotion timeline, verifies snapcn component contracts, and checks readable holds with an original example. |
+| [ui-motion-animation](./ui-motion-animation) | Builds one clear interface state change with interruptible input, semantic feedback and reduced-motion behavior. |
 
 ## Install
 
@@ -42,6 +43,7 @@ npx skills add steven-van-opus/creators-toolbox-skills --skill unslop-ui-rewrite
 npx skills add steven-van-opus/creators-toolbox-skills --skill seo-audit-checklist
 npx skills add steven-van-opus/creators-toolbox-skills --skill browser-game-maker
 npx skills add steven-van-opus/creators-toolbox-skills --skill snapcn-motion
+npx skills add steven-van-opus/creators-toolbox-skills --skill ui-motion-animation
 ```
 
 Or copy a skill folder into your project's `.agents/skills/` or `.claude/skills/` directory.
