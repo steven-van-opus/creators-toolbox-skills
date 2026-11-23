@@ -5,7 +5,7 @@ description: Plan and build a short Remotion product clip with Claude or another
 
 # snapcn Motion Brief
 
-Make the viewer understand one product action. Begin with the user's existing React/Remotion project and supplied assets. This is an original Creators Toolbox workflow, independent of snapcn's official skill.
+Make the viewer understand one product action. Begin with the user's existing React and [Remotion](https://creatorstoolbox.com/products/remotion) project and supplied assets. This is an original Creators Toolbox workflow, independent of [snapcn](https://creatorstoolbox.com/products/snapcn)'s official skill.
 
 ## Choose the action before the component
 
@@ -15,17 +15,17 @@ Make a beat table with start frame, end frame (exclusive), copy, asset and purpo
 
 ## Verify the library instead of guessing
 
-Read https://snapcn.dev/llms-components.txt and the exact component's documentation before adding it. Record its install name, real props, default duration and license tier. If the page is unavailable, inspect the installed local source or state that the integration is unverified. A component's name alone does not establish its props.
+Read the [current component table](https://snapcn.dev/llms-components.txt) and the exact component's documentation before adding it. Record its install name, real props, default duration and license tier. If the page is unavailable, inspect the installed local source or state that the integration is unverified. A component's name alone does not establish its props.
 
-An existing Remotion project needs a `components.json` and a matching `@/` alias in TypeScript and Remotion's bundler. Follow the current [installation documentation](https://snapcn.dev/docs/getting-started/installation); preserve the project's existing bundler options. The registry namespace is `@snapcn`, without a hyphen. Installing a component copies source into the project. Add only components needed for the chosen beats and review the changed files.
+An existing [Remotion](https://creatorstoolbox.com/products/remotion) project needs a `components.json` and a matching `@/` alias in TypeScript and [Remotion](https://creatorstoolbox.com/products/remotion)'s bundler. Follow the current [installation documentation](https://snapcn.dev/docs/getting-started/installation); preserve the project's existing bundler options. The registry namespace is `@snapcn`, without a hyphen. Installing a component copies source into the project. Add only components needed for the chosen beats and review the changed files.
 
-The upstream agent skill is separate: `npx skills add snapcndev/snapcn --skill snapcn`. This skill does not bundle that skill, any snapcn source or Pro components. Check the current component license and Remotion's own license before using either in client work. A free component does not imply every tool or rendering service is free.
+The upstream agent skill is separate: `npx skills add snapcndev/snapcn --skill snapcn`. This skill does not bundle that skill, any [snapcn](https://creatorstoolbox.com/products/snapcn) source or Pro components. Check the current component license and [Remotion](https://creatorstoolbox.com/products/remotion)'s own license before using either in client work. A free component does not imply every tool or rendering service is free.
 
 ## Build from the frame clock
 
-Use `useCurrentFrame()` and `useVideoConfig()` for motion. Derive positions and visibility from the current frame; no timers, CSS keyframe animations, mutable counters or unseeded randomness. Inside a Remotion Sequence, frames are local. Make that time basis explicit when passing frame values into helpers.
+Use `useCurrentFrame()` and `useVideoConfig()` for motion. Derive positions and visibility from the current frame; no timers, CSS keyframe animations, mutable counters or unseeded randomness. Inside a [Remotion](https://creatorstoolbox.com/products/remotion) Sequence, frames are local. Make that time basis explicit when passing frame values into helpers.
 
-The [original sample composition](./examples/SeedlingMotion.tsx) and [timing helper](./examples/timing.ts) demonstrate a fictional reminder moving into a list. They use Remotion primitives rather than copied library code. Keep that distinction when describing the example. Adapt or replace one beat with a verified installed snapcn component when the project calls for it.
+The [original sample composition](./examples/SeedlingMotion.tsx) and [timing helper](./examples/timing.ts) demonstrate a fictional reminder moving into a list. They use [Remotion](https://creatorstoolbox.com/products/remotion) primitives rather than copied library code. Keep that distinction when describing the example. Adapt or replace one beat with a verified installed [snapcn](https://creatorstoolbox.com/products/snapcn) component when the project calls for it.
 
 ## Inspect the result
 

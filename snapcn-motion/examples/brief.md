@@ -14,6 +14,6 @@ Canvas: 1280 x 720, 30 fps, 360 frames, 12 seconds. Background #F4F5ED, ink #173
 
 Keep "Illustrative concept" visible on every frame. The action begins on frame 90. It has settled by frame 135 and remains still through frame 269. The separate end card begins at frame 270.
 
-For a snapcn version, first inspect the current docs for a suitable title component, including its accepted props and duration. Install only that component and preserve the action and reading hold. Do not assume that a component's default animation fits inside these beats.
+For a [snapcn](https://creatorstoolbox.com/products/snapcn) version, first inspect the current docs for a suitable title component, including its accepted props and duration. Install only that component and preserve the action and reading hold. Do not assume that a component's default animation fits inside these beats.
 
 Check the rendered first frame, frames 90 and 135, frame 269, and the final frame. Then watch the whole exported clip at its intended feed size.
