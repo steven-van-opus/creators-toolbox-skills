@@ -30,6 +30,8 @@ These are not copies of other people's skills. Each one covers a problem we saw 
 | [snapcn-motion](./snapcn-motion) | Plans one product action as a Remotion timeline, verifies snapcn component contracts, and checks readable holds with an original example. |
 | [ui-motion-animation](./ui-motion-animation) | Builds one clear interface state change with interruptible input, semantic feedback and reduced-motion behavior. |
 
+| [reframe-brief](./reframe-brief) | Turns a vague request into a scoped brief with concrete interpretations, visible assumptions and observable acceptance criteria. |
+
 ## Install
 
 From the repo root, after you clone it:
@@ -44,6 +46,7 @@ npx skills add steven-van-opus/creators-toolbox-skills --skill seo-audit-checkli
 npx skills add steven-van-opus/creators-toolbox-skills --skill browser-game-maker
 npx skills add steven-van-opus/creators-toolbox-skills --skill snapcn-motion
 npx skills add steven-van-opus/creators-toolbox-skills --skill ui-motion-animation
+npx skills add steven-van-opus/creators-toolbox-skills --skill reframe-brief
 ```
 
 Or copy a skill folder into your project's `.agents/skills/` or `.claude/skills/` directory.
