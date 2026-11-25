@@ -8,6 +8,7 @@ These are not copies of other people's skills. Each one covers a problem we saw 
 
 | Skill | What it does |
 | --- | --- |
+| [draw-icons](./draw-icons) | Draws a family of SVG interface icons and checks legibility at the sizes used in the product. |
 | [make-logo](./make-logo) | Turns a short brand brief into a simple logo kit (SVG, PNG, favicon) with three original directions. |
 | [revenue-maxxing](./revenue-maxxing) | Audits how a creator actually makes money and recommends one next move, using a public brief you provide. |
 | [md3-ui](./md3-ui) | Reviews or specifies a product screen using Material Design 3, starting from the user's task. |
@@ -37,6 +38,7 @@ These are not copies of other people's skills. Each one covers a problem we saw 
 From the repo root, after you clone it:
 
 ```bash
+npx skills add steven-van-opus/creators-toolbox-skills --skill draw-icons
 npx skills add steven-van-opus/creators-toolbox-skills --skill make-logo
 npx skills add steven-van-opus/creators-toolbox-skills --skill revenue-maxxing
 npx skills add steven-van-opus/creators-toolbox-skills --skill md3-ui
