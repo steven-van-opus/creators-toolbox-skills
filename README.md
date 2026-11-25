@@ -30,8 +30,8 @@ These are not copies of other people's skills. Each one covers a problem we saw 
 | [browser-game-maker](./browser-game-maker) | Turns one sentence into a small, playable single-file HTML5 canvas game, then plays it in a browser to check it works. |
 | [snapcn-motion](./snapcn-motion) | Plans one product action as a Remotion timeline, verifies snapcn component contracts, and checks readable holds with an original example. |
 | [ui-motion-animation](./ui-motion-animation) | Builds one clear interface state change with interruptible input, semantic feedback and reduced-motion behavior. |
-
 | [reframe-brief](./reframe-brief) | Turns a vague request into a scoped brief with concrete interpretations, visible assumptions and observable acceptance criteria. |
+| [article-to-seo-and-shorts](./article-to-seo-and-shorts) | Repurposes a published article into a search-informed site draft and one to three split-screen shorts that point readers to it. |
 
 ## Install
 
@@ -49,6 +49,7 @@ npx skills add steven-van-opus/creators-toolbox-skills --skill browser-game-make
 npx skills add steven-van-opus/creators-toolbox-skills --skill snapcn-motion
 npx skills add steven-van-opus/creators-toolbox-skills --skill ui-motion-animation
 npx skills add steven-van-opus/creators-toolbox-skills --skill reframe-brief
+npx skills add steven-van-opus/creators-toolbox-skills --skill article-to-seo-and-shorts
 ```
 
 Or copy a skill folder into your project's `.agents/skills/` or `.claude/skills/` directory.
