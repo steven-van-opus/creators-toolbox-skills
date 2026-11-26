@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Observatory Lens | Three.js dolly zoom study</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; color: #f3f1e3; background: #111820; font: 16px system-ui, sans-serif; }
+  #track { height: 230svh; }
+  #stage { position: sticky; top: 0; height: 100svh; overflow: hidden; }
+  canvas { position: absolute; height: 100%; width: 100%; }
+  header, footer { position: absolute; z-index: 1; left: clamp(18px, 5vw, 84px); max-width: min(420px, 90vw); padding: 16px; background: #101922e8; border-radius: 8px; }
+  header { top: clamp(18px, 6vh, 60px); pointer-events: none; }
+  footer { bottom: clamp(18px, 6vh, 60px); }
+  h1, p { margin: 0; }
+  h1 { font: 500 clamp(28px, 5vw, 68px)/1 Georgia, serif; }
+  p { margin-top: 8px; }
+  input { width: 100%; min-height: 44px; margin: 0; accent-color: #ffb984; }
+  [hidden] { display: none; }
+  @media (prefers-reduced-motion: reduce) { #track { height: 100svh; } }
+</style>
+</head>
+<body>
+<main id="track">
+  <div id="stage">
+    <header>
+      <h1>Observatory Lens</h1>
+      <p>Widen the lens and watch the room change around the detector.</p>
+      <p id="fallback" hidden>The scene needs WebGL 2.</p>
+    </header>
+    <footer>
+      <label for="lens">Lens width</label>
+      <input id="lens" type="range" min="0" max="100" value="0">
+    </footer>
+  </div>
+</main>
+<script type="module">
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js';
+
+const stage = document.querySelector('#stage');
+const track = document.querySelector('#track');
+const lens = document.querySelector('#lens');
+
+function start() {
+  const canvas = document.createElement('canvas');
+  const context = canvas.getContext('webgl2', { antialias: true });
+  if (!context) {
+    document.querySelector('#fallback').hidden = false;
+    document.querySelector('footer').hidden = true;
+    return;
+  }
+  stage.prepend(canvas);
+  const renderer = new THREE.WebGLRenderer({ canvas, context, antialias: true });
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
+  const target = new THREE.WebGLRenderTarget(1, 1, { samples: 2 });
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x19272e);
+  scene.fog = new THREE.FogExp2(0x19272e, 0.036);
+  const camera = new THREE.PerspectiveCamera(42, 1, 0.15, 100);
+  scene.add(new THREE.HemisphereLight(0xf6d6ae, 0x56788b, 2.6));
+  const light = new THREE.PointLight(0xffb057, 140, 19);
+  light.position.set(-2, 3, 2);
+  scene.add(light);
+
+  const floor = new THREE.GridHelper(70, 56, 0xa3aaa1, 0x5d777e);
+  scene.add(floor);
+  const mat = new THREE.MeshStandardMaterial({ color: 0x424f56, roughness: 0.8 });
+  const brass = new THREE.MeshStandardMaterial({ color: 0xeaa365, metalness: 0.5, roughness: 0.3 });
+  const lit = new THREE.MeshBasicMaterial({ color: 0xffbd78 });
+  const archGeometry = new THREE.BoxGeometry(0.13, 5.2, 0.13);
+  const lintel = new THREE.BoxGeometry(8.1, 0.13, 0.13);
+  for (let index = 0; index < 12; index++) {
+    const z = 6 - index * 3.5;
+    for (const x of [-4, 4]) {
+      const column = new THREE.Mesh(archGeometry, mat);
+      column.position.set(x, 2.6, z);
+      scene.add(column);
+    }
+    const top = new THREE.Mesh(lintel, lit);
+    top.position.set(0, 5.2, z);
+    scene.add(top);
+  }
+  const stand = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.72, 1.7, 9), mat);
+  stand.position.y = 0.85;
+  scene.add(stand);
+  const detector = new THREE.Mesh(new THREE.IcosahedronGeometry(0.62, 0), brass);
+  detector.position.y = 2.15;
+  scene.add(detector);
+  const rim = new THREE.Mesh(new THREE.TorusGeometry(0.74, 0.04, 12, 44), lit);
+  rim.position.copy(detector.position);
+  scene.add(rim);
+
+  const distortion = new THREE.ShaderMaterial({
+    uniforms: { source: { value: target.texture }, aspect: { value: 1 }, bend: { value: 0 } },
+    vertexShader: `
+      varying vec2 texcoord;
+      void main() {
+        texcoord = uv;
+        gl_Position = vec4(position.xy, 0.0, 1.0);
+      }`,
+    fragmentShader: `
+      uniform sampler2D source;
+      uniform float aspect;
+      uniform float bend;
+      varying vec2 texcoord;
+      void main() {
+        vec2 offset = texcoord - 0.5;
+        vec2 corrected = offset * vec2(aspect, 1.0);
+        float radiusSquared = dot(corrected, corrected) / (0.25 * (aspect * aspect + 1.0));
+        vec2 sampleUV = 0.5 + offset * (1.0 + bend * radiusSquared) / (1.0 + bend);
+        gl_FragColor = texture2D(source, sampleUV);
+        #include <colorspace_fragment>
+      }`
+  });
+  const output = new THREE.Scene();
+  output.add(new THREE.Mesh(new THREE.PlaneGeometry(2, 2), distortion));
+  const outputCamera = new THREE.Camera();
+
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)');
+  const lookAt = detector.position.clone();
+  const axis = new THREE.Vector3(0, 0.8, 10).normalize();
+  const normalHalfTangent = Math.tan(THREE.MathUtils.degToRad(42 / 2));
+  const normalDistance = 10.3;
+  let scheduled = false;
+
+  function draw() {
+    scheduled = false;
+    const range = track.offsetHeight - stage.offsetHeight;
+    const progress = reduced.matches ? Number(lens.value) / 100 : THREE.MathUtils.clamp(scrollY / Math.max(range, 1), 0, 1);
+    if (!reduced.matches) lens.value = Math.round(progress * 100);
+    const verticalFov = THREE.MathUtils.lerp(42, 76, progress);
+    const halfTangent = Math.tan(THREE.MathUtils.degToRad(verticalFov / 2));
+    const distance = normalDistance * normalHalfTangent / halfTangent;
+    const bend = 0.24 * progress * progress;
+    camera.position.copy(lookAt).addScaledVector(axis, distance);
+    camera.lookAt(lookAt);
+    camera.fov = THREE.MathUtils.radToDeg(2 * Math.atan(halfTangent * (1 + bend)));
+    camera.updateProjectionMatrix();
+    distortion.uniforms.bend.value = bend;
+    renderer.setRenderTarget(target);
+    renderer.render(scene, camera);
+    renderer.setRenderTarget(null);
+    renderer.render(output, outputCamera);
+    canvas.dataset.fov = verticalFov.toFixed(1);
+    canvas.dataset.subjectHeight = (distance * halfTangent).toFixed(4);
+  }
+
+  function schedule() {
+    if (scheduled) return;
+    scheduled = true;
+    requestAnimationFrame(draw);
+  }
+
+  function resize() {
+    camera.aspect = stage.clientWidth / stage.clientHeight;
+    distortion.uniforms.aspect.value = camera.aspect;
+    renderer.setSize(stage.clientWidth, stage.clientHeight, false);
+    const pixels = renderer.getDrawingBufferSize(new THREE.Vector2());
+    target.setSize(pixels.x, pixels.y);
+    schedule();
+  }
+
+  lens.addEventListener('input', () => {
+    if (!reduced.matches) {
+      const progress = Number(lens.value) / 100;
+      scrollTo({ top: (track.offsetHeight - stage.offsetHeight) * progress, behavior: 'instant' });
+    }
+    schedule();
+  });
+  addEventListener('scroll', schedule, { passive: true });
+  addEventListener('resize', resize);
+  reduced.addEventListener('change', resize);
+  resize();
+}
+start();
+</script>
+</body>
+</html>

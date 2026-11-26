@@ -35,6 +35,9 @@ These are not copies of other people's skills. Each one covers a problem we saw 
 | [software-product-shots](./software-product-shots) | Turns a clean app capture into an angled device mockup and checks screen legibility at delivery size. |
 | [pixel-art-character-builder](./pixel-art-character-builder) | Builds a shared voxel model, a pixel-art turnaround, and action frames for an original character. |
 | [layered-reveal-motion](./layered-reveal-motion) | Explains a product assembly with aligned parts, a readable exploded view, and a reveal motion. |
+| [threejs-fisheye-dolly-zoom](./threejs-fisheye-dolly-zoom) | Keeps a subject framed while widening a Three.js lens, with an optional distortion pass. |
+| [threejs-endless-parallax-ride](./threejs-endless-parallax-ride) | Builds a looping Three.js route from recycled foreground tiles and deep landmarks. |
+| [threejs-ride-particles-sky](./threejs-ride-particles-sky) | Adds a bounded particle field and a cloud sky with coordinated light and fog. |
 
 ## Install
 
@@ -56,6 +59,9 @@ npx skills add steven-van-opus/creators-toolbox-skills --skill article-to-seo-an
 npx skills add steven-van-opus/creators-toolbox-skills --skill software-product-shots
 npx skills add steven-van-opus/creators-toolbox-skills --skill pixel-art-character-builder
 npx skills add steven-van-opus/creators-toolbox-skills --skill layered-reveal-motion
+npx skills add steven-van-opus/creators-toolbox-skills --skill threejs-fisheye-dolly-zoom
+npx skills add steven-van-opus/creators-toolbox-skills --skill threejs-endless-parallax-ride
+npx skills add steven-van-opus/creators-toolbox-skills --skill threejs-ride-particles-sky
 ```
 
 Or copy a skill folder into your project's `.agents/skills/` or `.claude/skills/` directory.

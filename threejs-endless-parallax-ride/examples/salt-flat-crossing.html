@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Salt Flat Crossing | Three.js parallax study</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; overflow: hidden; color: #fff6de; font: 16px system-ui, sans-serif; background: #182b45; }
+  main { min-height: 100svh; display: grid; align-items: start; background: radial-gradient(ellipse at 65% 51%,#ffd198 1%,#bb8b84 25%,#435579 58%,#162941 87%); }
+  canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .panel { z-index: 1; padding: clamp(28px, 5vw, 90px); pointer-events: none; }
+  h1 { margin: 0 0 16px; font: 500 clamp(45px, 6.7vw, 110px)/.88 Georgia, serif; letter-spacing: -.07em; text-shadow: 0 2px 16px #13263d70; }
+  p { margin: 0; max-width: 19rem; line-height: 1.5; text-wrap: pretty; text-shadow: 0 1px 10px #192940; }
+  .controls { position: absolute; z-index: 1; left: clamp(22px, 5vw, 90px); bottom: clamp(18px, 4vw, 60px); display: flex; gap: 12px; }
+  button { min-height: 44px; padding: 0 16px; color: inherit; font: inherit; border: 1px solid #fff6de65; border-radius: 6px; background: #192c43ed; }
+  button:focus-visible { outline: 3px solid #ffe39d; outline-offset: 4px; }
+  [hidden] { display: none; }
+  @media (max-width: 600px) { p { max-width: 14rem; font-size: 14px; } }
+</style>
+</head>
+<body>
+<main>
+  <div class="panel">
+    <h1>Salt Flat<br>Crossing</h1>
+    <p>Follow the roadside markers to see how depth changes the pace of a looping Three.js landscape.</p>
+    <p id="unavailable" hidden>The scene needs WebGL 2.</p>
+  </div>
+  <div class="controls">
+    <button id="toggle" type="button">Pause ride</button>
+    <button id="reset" type="button">Reset</button>
+  </div>
+</main>
+<script type="module">
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js';
+
+const main = document.querySelector('main');
+const toggle = document.querySelector('#toggle');
+const reset = document.querySelector('#reset');
+
+function start() {
+  const canvas = document.createElement('canvas');
+  const context = canvas.getContext('webgl2', { alpha: true, antialias: true });
+  if (!context) {
+    document.querySelector('#unavailable').hidden = false;
+    document.querySelector('.controls').hidden = true;
+    return;
+  }
+
+  const scene = new THREE.Scene();
+  scene.fog = new THREE.FogExp2(0xba9a9e, 0.009);
+  const camera = new THREE.PerspectiveCamera(48, 1, 0.1, 430);
+  const renderer = new THREE.WebGLRenderer({ canvas, context, alpha: true, antialias: true });
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 1.75));
+  main.prepend(canvas);
+
+  scene.add(new THREE.HemisphereLight(0xffddbd, 0x685581, 2.5));
+  const sun = new THREE.DirectionalLight(0xffd1a1, 3.2);
+  sun.position.set(-25, 18, -40);
+  scene.add(sun);
+
+  const materials = {
+    ground: new THREE.MeshStandardMaterial({ color: 0x535976, roughness: 1 }),
+    road: new THREE.MeshStandardMaterial({ color: 0x242b43, roughness: 0.98 }),
+    line: new THREE.MeshBasicMaterial({ color: 0xffd08d }),
+    post: new THREE.MeshStandardMaterial({ color: 0xdf8653 }),
+    light: new THREE.MeshBasicMaterial({ color: 0xffdc94 }),
+    gravel: new THREE.MeshStandardMaterial({ color: 0x655268, flatShading: true }),
+    hill: new THREE.MeshStandardMaterial({ color: 0x584a66, flatShading: true }),
+    ridge: new THREE.MeshStandardMaterial({ color: 0x78759e, flatShading: true }),
+    copper: new THREE.MeshStandardMaterial({ color: 0xd07038, roughness: 0.55, flatShading: true }),
+    glass: new THREE.MeshStandardMaterial({ color: 0x202f43, roughness: 0.2 })
+  };
+
+  function mesh(geometry, material, parent, x, y, z) {
+    const object = new THREE.Mesh(geometry, material);
+    object.position.set(x, y, z);
+    parent.add(object);
+    return object;
+  }
+
+  const floor = mesh(new THREE.PlaneGeometry(600, 580), materials.ground, scene, 0, -0.08, -225);
+  floor.rotation.x = -Math.PI / 2;
+  const road = mesh(new THREE.PlaneGeometry(8.6, 360), materials.road, scene, 0, 0, -145);
+  road.rotation.x = -Math.PI / 2;
+  const bumper = new THREE.BoxGeometry(0.055, 0.025, 340);
+  for (const x of [-4.1, 4.1]) mesh(bumper, materials.line, scene, x, 0.015, -145);
+
+  // These hills sit at different world depths. One camera drift gives each its own screen speed.
+  const rockGeometry = new THREE.DodecahedronGeometry(1, 0);
+  for (let index = 0; index < 14; index++) {
+    const sign = index % 2 === 0 ? 1 : -1;
+    const depth = index < 7 ? -80 : -163;
+    const peak = mesh(rockGeometry, index < 7 ? materials.hill : materials.ridge, scene,
+      sign * (22 + (index % 7) * 14), 0, depth - (index % 4) * 12);
+    peak.scale.set(17 + (index % 3) * 6, 8 + (index % 5) * 3, 12 + (index % 3) * 4);
+    peak.rotation.set(0.14 * index, 0.8 * index, 0.25 * sign);
+  }
+
+  const post = new THREE.BoxGeometry(0.18, 0.66, 0.18);
+  const diode = new THREE.BoxGeometry(0.23, 0.09, 0.21);
+  const stripe = new THREE.BoxGeometry(0.1, 0.022, 1.6);
+  const tiles = Array.from({ length: 24 }, (_, index) => {
+    const tile = new THREE.Group();
+    scene.add(tile);
+    mesh(stripe, materials.line, tile, 0, 0.025, 0);
+    for (const side of [-1, 1]) {
+      mesh(post, materials.post, tile, side * 4.8, 0.33, -1);
+      mesh(diode, materials.light, tile, side * 4.8, 0.65, -1);
+      const stone = mesh(rockGeometry, materials.gravel, tile, side * (6.5 + index % 4), 0.4, 2);
+      stone.scale.set(1.05 + (index % 3) * 0.35, 0.65, 0.8);
+      stone.rotation.y = index * 2.37;
+    }
+    return tile;
+  });
+
+  // Retain the survey skimmer in camera space by keeping the camera aimed along the road.
+  const skimmer = new THREE.Group();
+  scene.add(skimmer);
+  skimmer.position.set(0.75, 0.69, -2);
+  const hull = mesh(new THREE.CylinderGeometry(0.56, 0.88, 1.8, 6), materials.copper, skimmer, 0, 0, 0);
+  hull.rotation.x = Math.PI / 2;
+  hull.scale.z = 0.52;
+  const canopy = mesh(new THREE.SphereGeometry(0.55, 10, 8), materials.glass, skimmer, 0, 0.38, -0.29);
+  canopy.scale.set(0.67, 0.66, 1.27);
+  const nacelle = new THREE.BoxGeometry(0.33, 0.26, 1.3);
+  const rail = new THREE.BoxGeometry(1.9, 0.12, 0.27);
+  const tailLight = new THREE.BoxGeometry(0.23, 0.08, 0.06);
+  mesh(rail, materials.glass, skimmer, 0, -0.06, 0.3);
+  for (const x of [-0.88, 0.88]) {
+    mesh(nacelle, materials.copper, skimmer, x, 0.03, 0.3);
+    mesh(tailLight, materials.light, skimmer, x, 0.06, 0.97);
+  }
+
+  const query = new URLSearchParams(location.search);
+  const motion = matchMedia('(prefers-reduced-motion: reduce)');
+  let travel = Math.max(0, Number(query.get('station')) || 0);
+  let moving = !motion.matches && !query.has('still');
+  let previousTime;
+  let frameId;
+
+  function updateControls() {
+    toggle.textContent = moving ? 'Pause ride' : 'Play ride';
+  }
+
+  function draw() {
+    const interval = 6;
+    const length = interval * tiles.length;
+    const remainder = travel % length;
+    tiles.forEach((tile, index) => {
+      tile.position.z = 19 - length + ((index * interval + remainder) % length);
+    });
+    const drift = Math.sin(travel * 0.054);
+    skimmer.position.y = 0.69 + Math.sin(travel * 0.29) * 0.09;
+    skimmer.rotation.z = drift * 0.11;
+    const mobile = innerWidth < 600;
+    camera.position.set(drift * 0.85, mobile ? 4.8 : 5.1, 10.8);
+    camera.lookAt(mobile ? -0.6 : -6.2, 2.5, -22);
+    renderer.render(scene, camera);
+    canvas.dataset.station = travel.toFixed(2);
+    canvas.dataset.tileCount = tiles.length;
+  }
+
+  function frame(now) {
+    if (!moving) return;
+    if (previousTime !== undefined) travel += Math.min((now - previousTime) / 1000, 0.1) * 13;
+    previousTime = now;
+    draw();
+    frameId = requestAnimationFrame(frame);
+  }
+
+  function setMoving(value) {
+    if (value === moving) return;
+    moving = value;
+    previousTime = undefined;
+    updateControls();
+    if (moving) frameId = requestAnimationFrame(frame);
+    else cancelAnimationFrame(frameId);
+  }
+
+  function resize() {
+    camera.aspect = innerWidth / innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(innerWidth, innerHeight, false);
+    draw();
+  }
+
+  toggle.addEventListener('click', () => setMoving(!moving));
+  reset.addEventListener('click', () => { travel = 0; draw(); });
+  motion.addEventListener('change', event => { if (event.matches) setMoving(false); });
+  addEventListener('resize', resize);
+  addEventListener('visibilitychange', () => { previousTime = undefined; });
+  updateControls();
+  resize();
+  if (moving) frameId = requestAnimationFrame(frame);
+}
+start();
+</script>
+</body>
+</html>
