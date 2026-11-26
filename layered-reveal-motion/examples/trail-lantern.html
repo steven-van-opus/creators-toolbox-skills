@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Trail lantern | Layered product reveal</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; color: #182d33; background: #eee9dc; font: 16px/1.5 system-ui, sans-serif; }
+  main { max-width: 1480px; margin: auto; padding: clamp(20px, 5vw, 72px); }
+  h1 { margin: 0 0 12px; font-size: clamp(36px, 6.6vw, 92px); line-height: .99; letter-spacing: -.04em; }
+  .intro { margin: 0 0 29px; font-size: clamp(16px, 2vw, 25px); color: #485956; max-width: 68ch; }
+  .comparison { display: grid; grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr); gap: 16px; }
+  figure { min-width: 0; overflow: hidden; margin: 0; border: 1px solid #c7cabc; border-radius: 18px; background: #fcf7e8; }
+  figcaption { padding: 15px clamp(14px, 2vw, 30px); font-size: clamp(16px, 2vw, 27px); font-weight: 750; }
+  .stage {
+    --width: clamp(130px, 16vw, 242px);
+    --position: 50%;
+    position: relative;
+    height: 510px;
+    background-color: #dce3d2;
+    background-image: linear-gradient(#cdd7c3 1px, transparent 1px), linear-gradient(90deg, #cdd7c3 1px, transparent 1px);
+    background-size: 24px 24px;
+  }
+  .interactive .stage {
+    --position: 40%;
+    background-color: #e6e7d9;
+    background-image: linear-gradient(#d9decb 1px, transparent 1px), linear-gradient(90deg, #d9decb 1px, transparent 1px);
+  }
+  .axis {
+    position: absolute;
+    inset: 22px auto 36px var(--position);
+    border-left: 1px dashed #698271;
+    opacity: 0;
+    transition: opacity 160ms ease;
+  }
+  .floor {
+    position: absolute;
+    left: var(--position);
+    top: 439px;
+    width: calc(var(--width) * 1.2);
+    height: 30px;
+    border-radius: 50%;
+    background: #92a695;
+    opacity: .5;
+    translate: -50%;
+  }
+  .part {
+    position: absolute;
+    width: var(--width);
+    left: var(--position);
+    translate: -50%;
+    transform: translateY(0);
+    transition: transform 520ms cubic-bezier(.24, .75, .3, 1);
+  }
+  [data-state="exploded"] .part { transform: translateY(var(--rise)); }
+  [data-state="exploded"] .axis, [data-state="exploded"] .callout { opacity: 1; }
+  .callout {
+    position: absolute;
+    left: calc(100% + 15px);
+    top: 50%;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    translate: 0 -50%;
+    color: #213a36;
+    font-size: clamp(13px, 2vw, 24px);
+    font-weight: 750;
+    opacity: 0;
+    white-space: nowrap;
+    transition: opacity 180ms ease;
+  }
+  .callout::before {
+    content: "";
+    width: clamp(10px, 3vw, 58px);
+    height: 1px;
+    background: #718977;
+  }
+  .base {
+    --rise: 0px;
+    top: 382px;
+    height: 68px;
+    border-radius: 50% / 34%;
+    background: linear-gradient(90deg, #1f3435 0%, #385b4f 44%, #213c36 84%, #142c2a);
+    box-shadow: inset 0 -9px 0 #162a29, 0 5px 0 #172b27;
+  }
+  .base::before, .collar::before, .cap::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto;
+    height: 35px;
+    border-radius: 50%;
+    background: #54715a;
+  }
+  .base::after {
+    content: "";
+    position: absolute;
+    left: 43%;
+    top: 40px;
+    width: 14%;
+    height: 11px;
+    border-radius: 7px;
+    background: #f7bc64;
+    box-shadow: 0 2px 0 #2b3630;
+  }
+  .collar {
+    --rise: -57px;
+    top: 358px;
+    left: var(--position);
+    width: calc(var(--width) * .91);
+    height: 39px;
+    border-radius: 50% / 45%;
+    background: linear-gradient(90deg, #845637, #e5ad63 38%, #bb783f 72%, #754931);
+    box-shadow: inset 0 -5px 0 #774b30;
+  }
+  .collar::before { height: 23px; background: #efbf76; }
+  .chamber {
+    --rise: -103px;
+    top: 217px;
+    width: calc(var(--width) * .84);
+    height: 154px;
+    border: 1px solid #a57747;
+    border-radius: 50% / 12%;
+    background: repeating-linear-gradient(90deg, #854b2824 0 2px, transparent 2px 14px),
+      linear-gradient(90deg, #bd7842, #ffdc8b 31%, #fff7b6 55%, #e4a65d 81%, #a76d46);
+    box-shadow: inset 0 -16px 0 #6e503d3b;
+  }
+  .chamber::before, .chamber::after {
+    content: "";
+    position: absolute;
+    inset: -1px -2px auto;
+    height: 28px;
+    border: 1px solid #b27b4c;
+    border-radius: 50%;
+    background: #ffe8a3;
+  }
+  .chamber::after { top: auto; bottom: -2px; background: #c17c4647; }
+  .cap {
+    --rise: -167px;
+    top: 186px;
+    height: 55px;
+    border-radius: 50% / 42%;
+    background: linear-gradient(90deg, #263d35, #456758 47%, #243e32 85%);
+    box-shadow: inset 0 -6px 0 #1d352a;
+  }
+  .cap::before { height: 34px; background: #6b8a6b; border: 1px solid #476855; }
+  .cap::after {
+    content: "";
+    position: absolute;
+    inset: -12px 36% auto;
+    height: 26px;
+    border: 5px solid #955f38;
+    border-top-color: #f0b871;
+    border-left-color: #d89b58;
+    border-radius: 10px 10px 8px 8px;
+  }
+  .collar .callout { left: calc(100% + 26px); }
+  .chamber .callout { left: calc(100% + 34px); }
+  .controls { display: flex; flex-wrap: wrap; align-items: center; gap: 13px; margin: 17px 0 0; }
+  button {
+    min-height: 44px; padding: 0 16px; border: 0; border-radius: 7px;
+    color: #fff3d8; background: #263e36; font: inherit; font-weight: 700; cursor: pointer;
+  }
+  button:focus-visible { outline: 3px solid #885738; outline-offset: 4px; }
+  button[aria-pressed="true"] { background: #664429; }
+  .readout { margin: 0; color: #485956; }
+  .details { padding: 18px 0 0; }
+  .details h2 { margin: 0; font-size: 20px; }
+  .details ul { margin: 8px 0 0; padding-inline-start: 18px; }
+  .cover .controls, .cover .details { display: none; }
+  .cover main { padding-top: 63px; }
+  .cover .callout, .cover .part, .cover .axis { transition: none; }
+  @media (max-width: 760px) {
+    .comparison { grid-template-columns: 1fr; }
+    .stage { --width: clamp(118px, 30vw, 188px); }
+    .interactive .stage { --position: 36%; }
+    .callout { left: calc(100% + 7px); }
+    .collar .callout { left: calc(100% + 12px); }
+    .chamber .callout { left: calc(100% + 17px); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .part, .axis, .callout { transition: none; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <h1>Trail lantern in layers</h1>
+  <p class="intro">Lift the cap, chamber, and collar along one axis to see how the four pieces fit.</p>
+  <div class="comparison">
+    <figure class="reference">
+      <figcaption>Assembled reference</figcaption>
+      <div class="stage" role="img" aria-label="Assembled fictional trail lantern">
+        <div class="floor"></div>
+        <div class="part base"></div>
+        <div class="part collar"></div>
+        <div class="part chamber"></div>
+        <div class="part cap"></div>
+      </div>
+    </figure>
+    <figure class="interactive" data-state="assembled">
+      <figcaption id="caption">Reveal preview</figcaption>
+      <div class="stage" id="diagram" aria-hidden="true">
+        <div class="axis"></div>
+        <div class="floor"></div>
+        <div class="part base"><span class="callout">Base</span></div>
+        <div class="part collar"><span class="callout">Collar</span></div>
+        <div class="part chamber"><span class="callout">Light chamber</span></div>
+        <div class="part cap"><span class="callout">Top cap</span></div>
+      </div>
+    </figure>
+  </div>
+  <div class="controls">
+    <button type="button" aria-pressed="false" aria-controls="diagram">Exploded view</button>
+    <p class="readout">Layers assembled</p>
+  </div>
+  <section class="details" aria-label="Trail lantern parts">
+    <h2>Parts from top to bottom</h2>
+    <ul>
+      <li>The cap covers the chamber.</li>
+      <li>The light chamber sits directly over the collar.</li>
+      <li>The collar joins the light chamber to the base.</li>
+      <li>The base sets the ground line for both views.</li>
+    </ul>
+  </section>
+</main>
+<script>
+  const comparison = document.querySelector('.interactive');
+  const toggle = document.querySelector('button');
+  const status = document.querySelector('.readout');
+  const caption = document.querySelector('#caption');
+  const cover = new URLSearchParams(location.search).has('cover');
+  document.body.classList.toggle('cover', cover);
+
+  function show(exploded) {
+    comparison.dataset.state = exploded ? 'exploded' : 'assembled';
+    toggle.setAttribute('aria-pressed', String(exploded));
+    status.textContent = exploded ? 'Layers separated' : 'Layers assembled';
+    caption.textContent = exploded ? 'Exploded view' : 'Reveal preview';
+  }
+
+  toggle.addEventListener('click', () => show(toggle.getAttribute('aria-pressed') === 'false'));
+  if (cover) show(true);
+</script>
+</body>
+</html>

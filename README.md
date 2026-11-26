@@ -33,6 +33,8 @@ These are not copies of other people's skills. Each one covers a problem we saw 
 | [reframe-brief](./reframe-brief) | Turns a vague request into a scoped brief with concrete interpretations, visible assumptions and observable acceptance criteria. |
 | [article-to-seo-and-shorts](./article-to-seo-and-shorts) | Repurposes a published article into a search-informed site draft and one to three split-screen shorts that point readers to it. |
 | [software-product-shots](./software-product-shots) | Turns a clean app capture into an angled device mockup and checks screen legibility at delivery size. |
+| [pixel-art-character-builder](./pixel-art-character-builder) | Builds a shared voxel model, a pixel-art turnaround, and action frames for an original character. |
+| [layered-reveal-motion](./layered-reveal-motion) | Explains a product assembly with aligned parts, a readable exploded view, and a reveal motion. |
 
 ## Install
 
@@ -52,6 +54,8 @@ npx skills add steven-van-opus/creators-toolbox-skills --skill ui-motion-animati
 npx skills add steven-van-opus/creators-toolbox-skills --skill reframe-brief
 npx skills add steven-van-opus/creators-toolbox-skills --skill article-to-seo-and-shorts
 npx skills add steven-van-opus/creators-toolbox-skills --skill software-product-shots
+npx skills add steven-van-opus/creators-toolbox-skills --skill pixel-art-character-builder
+npx skills add steven-van-opus/creators-toolbox-skills --skill layered-reveal-motion
 ```
 
 Or copy a skill folder into your project's `.agents/skills/` or `.claude/skills/` directory.
