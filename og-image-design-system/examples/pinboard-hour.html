@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pinboard Hour | Shared project boards</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --paper: #f8f4e7;
+      --ink: #232b2a;
+      --brand: #14453d;
+      --accent: #f4ce72;
+      --board: #c3d7b7;
+      --headline: "Georgia", "Times New Roman", serif;
+      --ui: system-ui, sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--paper);
+      color: var(--ink);
+      font-family: var(--ui);
+    }
+    .card {
+      position: relative;
+      isolation: isolate;
+      display: grid;
+      grid-template-columns: 1.16fr 1fr;
+      align-items: center;
+      min-height: 100svh;
+      overflow: hidden;
+      padding: 5.7vw 6.1vw 6.1vw;
+      background:
+        radial-gradient(ellipse at 82% 51%, #e5e8d3 0%, transparent 58%),
+        var(--paper);
+    }
+    .card::after {
+      position: absolute;
+      z-index: -1;
+      inset: 0;
+      background-image: radial-gradient(#47604e 0.65px, transparent 0.65px);
+      background-size: 8px 8px;
+      opacity: .13;
+      content: "";
+    }
+    .brand {
+      display: flex;
+      gap: .85vw;
+      align-items: center;
+      width: fit-content;
+      margin: 0 0 3.5vw;
+      color: var(--brand);
+      font-size: 2.1vw;
+      font-weight: 740;
+      letter-spacing: -.05em;
+    }
+    .mark {
+      position: relative;
+      width: 2.75vw;
+      height: 2.75vw;
+      border-radius: 24%;
+      background: var(--brand);
+    }
+    .mark::after {
+      position: absolute;
+      inset: 26% 32%;
+      transform: rotate(31deg);
+      border: .17vw solid var(--accent);
+      border-radius: 62% 63% 58% 66%;
+      content: "";
+    }
+    h1 {
+      margin: 0;
+      color: var(--brand);
+      max-width: 12ch;
+      font-family: var(--headline);
+      font-size: 6.9vw;
+      font-weight: 400;
+      letter-spacing: -.068em;
+      line-height: .98;
+      text-wrap: balance;
+    }
+    .illustration {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 1.08;
+    }
+    .grid {
+      position: absolute;
+      inset: 1% 2%;
+      border-radius: 50%;
+      background-image:
+        linear-gradient(#61816a42 1px, transparent 1px),
+        linear-gradient(90deg, #61816a42 1px, transparent 1px);
+      background-size: 28px 28px;
+      mask-image: radial-gradient(ellipse, #000 22%, #0009 55%, transparent 74%);
+    }
+    .sheet {
+      position: absolute;
+      inset: 15% 15% 16% 14%;
+      border: 1px solid #ffffff9b;
+      border-radius: 1.8vw;
+      background: var(--board);
+      box-shadow: 0 1.7vw 3.2vw #2c50352c;
+    }
+    .sheet:first-of-type {
+      transform: translate(12%, 3%) rotate(13deg);
+      background: #f8d884;
+    }
+    .sheet:nth-of-type(2) {
+      transform: translate(-13%, 2%) rotate(-10deg);
+      background: #82a88d;
+    }
+    .board {
+      transform: translate(1%, -3%) rotate(-4deg);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: .75vw;
+      padding: 2.1vw;
+      border: 1px solid #edf1de;
+      background: linear-gradient(150deg, #f9f8ed, #e7eedc);
+    }
+    .board h2 {
+      margin: 0 0 .32vw;
+      color: var(--brand);
+      font-size: 2.2vw;
+      font-weight: 720;
+      letter-spacing: -.06em;
+    }
+    .link {
+      display: flex;
+      gap: .66vw;
+      align-items: center;
+      padding: .6vw .72vw;
+      border: 1px solid #b6c5b0;
+      border-radius: .63vw;
+      background: #fffdf7;
+      color: #254740;
+      font-size: 1.36vw;
+      font-weight: 600;
+    }
+    .link::before {
+      width: 1.3vw;
+      height: 1.3vw;
+      flex: none;
+      border: .1vw solid #43856c;
+      border-radius: .34vw;
+      background: #d4e8d2;
+      content: "";
+    }
+    .link:nth-of-type(2)::before { background: #f6df9d; border-color: #b18539; }
+    .link:nth-of-type(3)::before { background: #d7dbf0; border-color: #7c88ae; }
+    .share {
+      position: absolute;
+      right: 3.5%;
+      bottom: 10%;
+      transform: rotate(7deg);
+      border: 1px solid #f4f4e6a3;
+      border-radius: 2.35vw;
+      padding: .85vw 1.25vw;
+      background: var(--brand);
+      color: #fcfaee;
+      font-size: 1.34vw;
+      font-weight: 700;
+      box-shadow: 0 1vw 1.8vw #21483650;
+    }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <section>
+      <p class="brand"><span class="mark" aria-hidden="true"></span>Pinboard Hour</p>
+      <h1>From saved links to shared boards.</h1>
+    </section>
+    <section class="illustration" aria-label="Illustration of a shared project board">
+      <div class="grid" aria-hidden="true"></div>
+      <article class="sheet" aria-hidden="true"></article>
+      <article class="sheet" aria-hidden="true"></article>
+      <article class="sheet board">
+        <h2>Studio handoff</h2>
+        <div class="link">Reference links</div>
+        <div class="link">Drafts and notes</div>
+        <div class="link">Review queue</div>
+      </article>
+      <span class="share">Share board</span>
+    </section>
+  </main>
+</body>
+</html>

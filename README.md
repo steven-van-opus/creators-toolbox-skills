@@ -38,6 +38,9 @@ These are not copies of other people's skills. Each one covers a problem we saw 
 | [threejs-fisheye-dolly-zoom](./threejs-fisheye-dolly-zoom) | Keeps a subject framed while widening a Three.js lens, with an optional distortion pass. |
 | [threejs-endless-parallax-ride](./threejs-endless-parallax-ride) | Builds a looping Three.js route from recycled foreground tiles and deep landmarks. |
 | [threejs-ride-particles-sky](./threejs-ride-particles-sky) | Adds a bounded particle field and a cloud sky with coordinated light and fog. |
+| [social-post-design-brief](./social-post-design-brief) | Turns a launch into a card or carousel brief with draft copy, crops, and a capture list. |
+| [og-image-design-system](./og-image-design-system) | Builds a reusable 1200 × 630 link-preview card from your brand kit. |
+| [launch-video-storyboard](./launch-video-storyboard) | Turns available product footage into a timed shot list, captions, and capture notes. |
 
 ## Install
 
@@ -62,6 +65,9 @@ npx skills add steven-van-opus/creators-toolbox-skills --skill layered-reveal-mo
 npx skills add steven-van-opus/creators-toolbox-skills --skill threejs-fisheye-dolly-zoom
 npx skills add steven-van-opus/creators-toolbox-skills --skill threejs-endless-parallax-ride
 npx skills add steven-van-opus/creators-toolbox-skills --skill threejs-ride-particles-sky
+npx skills add steven-van-opus/creators-toolbox-skills --skill social-post-design-brief
+npx skills add steven-van-opus/creators-toolbox-skills --skill og-image-design-system
+npx skills add steven-van-opus/creators-toolbox-skills --skill launch-video-storyboard
 ```
 
 Or copy a skill folder into your project's `.agents/skills/` or `.claude/skills/` directory.
